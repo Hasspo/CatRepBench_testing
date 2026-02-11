@@ -11,21 +11,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pandas
+        run: pip install pandas
 
-      - name: Run all test.py files
+      - name: Run all test.py files with error propagation
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          find . -name "test.py" -exec python {} \;
+          exit_code=0
+          while IFS= read -r -d '' file; do
+            echo "▶️ Running $file"
+            python "$file" || exit_code=1
+          done < <(find . -name "test.py" -print0)
+          exit $exit_code

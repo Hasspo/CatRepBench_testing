@@ -109,9 +109,8 @@ class BaseRepresentationTest(unittest.TestCase):
         recovered = self.rep.inverse_transform(transformed)
         # Сравниваем оригинальные категориальные колонки
         for col in self.schema.categorical_cols:
-            pd.testing.assert_series_equal(
-                recovered[col], self.train_df[col], check_names=False
-            )
+            self.assertEqual(recovered[col].tolist(),
+                             self.train_df[col].tolist())
 
     def test_unknown_category_handling(self):
         assert 0 == 1
