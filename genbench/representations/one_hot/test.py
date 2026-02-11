@@ -10,22 +10,22 @@ from genbench.representations.one_hot.one_hot import OneHotRepresentation
 
 
 class BaseRepresentationTest(unittest.TestCase):
-    """Абстрактный тест для всех классов представлений."""
+    """Base test case for all representation classes."""
 
     representation_class = OneHotRepresentation
-    representation_kwargs = {}  # optional params
+    representation_kwargs = {}  # optional constructor parameters
     requires_fit_expected = True
     is_invertible_expected = True
 
     @classmethod
     def setUpClass(cls):
-        """Проверка, что представление определено."""
+        """Skip the base class if no representation_class is set."""
         if cls.representation_class is None:
             raise unittest.SkipTest(
-                "BaseRepresentationTest не должен запускаться напрямую")
+                "BaseRepresentationTest should not be run directly")
 
     def setUp(self):
-        """Синтетические данные для обучения и тестирования."""
+        """Create synthetic train/test data and a fitted schema."""
         self.train_df = pd.DataFrame({
             'color': ['red', 'blue', 'green', 'red'],
             'size': ['small', 'medium', 'large', 'small'],
@@ -46,73 +46,75 @@ class BaseRepresentationTest(unittest.TestCase):
 
         self.rep = self.representation_class(**self.representation_kwargs)
 
-    # ----- Тесты интерфейса -----
+    # ----- Interface tests -----
     def test_methods_exist(self):
-        """Проверка наличия обязательных методов."""
+        """Check that all required methods are implemented."""
         methods = ['fit', 'transform', 'inverse_transform', 'requires_fit',
                    'is_invertible', 'get_state', 'from_state']
         for method in methods:
             self.assertTrue(hasattr(self.rep, method),
-                            f"Отсутствует метод {method}")
+                            f"Missing method {method}")
 
     def test_requires_fit(self):
-        """Проверка значения requires_fit."""
+        """Verify the value of requires_fit()."""
         self.assertEqual(self.rep.requires_fit(), self.requires_fit_expected)
 
     def test_is_invertible(self):
-        """Проверка значения is_invertible."""
+        """Verify the value of is_invertible()."""
         self.assertEqual(self.rep.is_invertible(), self.is_invertible_expected)
 
     def test_fit_sets_fitted_flag(self):
-        """После fit должен быть установлен fitted_ = True."""
+        """After fit, the fitted_ attribute must be True."""
         self.rep.fit(self.train_df, self.schema)
         self.assertTrue(self.rep.fitted_)
 
     def test_transform_requires_fit(self):
-        """transform без fit должен кидать ошибку."""
+        """transform() without fit must raise RuntimeError."""
         with self.assertRaises(RuntimeError):
             self.rep.transform(self.train_df)
 
     def test_inverse_transform_requires_fit(self):
-        """inverse_transform без fit должен кидать ошибку."""
+        """inverse_transform() without fit must raise RuntimeError."""
         with self.assertRaises(RuntimeError):
             self.rep.inverse_transform(self.train_df)
 
     def test_transform_returns_dataframe(self):
-        """transform должен возвращать pandas DataFrame."""
+        """transform() must return a pandas DataFrame."""
         self.rep.fit(self.train_df, self.schema)
         result = self.rep.transform(self.train_df)
         self.assertIsInstance(result, pd.DataFrame)
 
-    # ----- Тесты сериализации -----
+    # ----- Serialization tests -----
     def test_get_state_from_state_roundtrip(self):
-        """Проверка, что get_state -> from_state восстанавливает объект."""
+        """get_state() → from_state() should recover the original object."""
         self.rep.fit(self.train_df, self.schema)
         state = self.rep.get_state()
         new_rep = self.representation_class.from_state(state)
-        # Сравниваем состояние
         self.assertEqual(state.params, new_rep.get_state().params)
 
-    # ----- Тесты обратного преобразования (если invertible) -----
+    # ----- Round‑trip tests (only if invertible) -----
     def test_inverse_transform_roundtrip_on_train(self):
-        """Если invertible, проверяем восстановление на train."""
+        """For invertible representations, transform + inverse_transform
+        should recover the original categorical columns on training data.
+        """
         if not self.rep.is_invertible():
-            self.skipTest("Представление необратимо")
+            self.skipTest("Representation is not invertible")
         self.rep.fit(self.train_df, self.schema)
         transformed = self.rep.transform(self.train_df)
         recovered = self.rep.inverse_transform(transformed)
-        # Сравниваем оригинальные категориальные колонки
+
         for col in self.schema.categorical_cols:
             self.assertEqual(recovered[col].tolist(),
                              self.train_df[col].tolist())
 
+    # ----- Handling of unknown categories -----
     def test_unknown_category_handling(self):
-        """Базовая проверка обработки неизвестных категорий."""
+        """Basic check for handling unseen categories."""
         self.rep.fit(self.train_df, self.schema)
         transformed = self.rep.transform(self.test_df)
-        # Должен быть валидный DataFrame
+
         self.assertIsInstance(transformed, pd.DataFrame)
-        # Обратное преобразование не должно падать
+
         if self.rep.is_invertible():
             recovered = self.rep.inverse_transform(transformed)
             self.assertEqual(len(recovered), len(self.test_df))
