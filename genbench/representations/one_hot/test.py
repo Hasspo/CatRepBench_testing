@@ -31,7 +31,12 @@ class BaseRepresentationTest(unittest.TestCase):
             'size': ['small', 'medium', 'large', 'small'],
             'price': [10.0, 15.0, 20.0, 12.0]
         })
-        self.schema = TabularSchema.infer_from_dataframe(self.train_df)
+        # Явно указываем типы колонок
+        self.schema = TabularSchema.infer_from_dataframe(
+            self.train_df,
+            categorical_cols=['color', 'size'],
+            continuous_cols=['price']
+        )
 
         self.test_df = pd.DataFrame({
             'color': ['purple', 'red'],
@@ -39,7 +44,6 @@ class BaseRepresentationTest(unittest.TestCase):
             'price': [11.0, 13.0]
         })
 
-        # Создаём экземпляр представления с заданными kwargs
         self.rep = self.representation_class(**self.representation_kwargs)
 
     # ----- Тесты интерфейса -----
