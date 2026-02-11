@@ -104,6 +104,7 @@ class BaseRepresentationTest(unittest.TestCase):
             )
 
     def test_unknown_category_handling(self):
+        assert(0 == 1)
         """Базовая проверка обработки неизвестных категорий."""
         self.rep.fit(self.train_df, self.schema)
         transformed = self.rep.transform(self.test_df)
