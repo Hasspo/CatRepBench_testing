@@ -30,19 +30,25 @@ class BaseRepresentationTest(unittest.TestCase):
             'color': ['red', 'blue', 'green', 'red'],
             'size': ['small', 'medium', 'large', 'small'],
             'price': [10.0, 15.0, 20.0, 12.0]
+        }).astype({
+            'color': 'category',
+            'size': 'category'
         })
-        # Явно указываем типы колонок
-        self.schema = TabularSchema.infer_from_dataframe(
-            self.train_df,
-            categorical_cols=['color', 'size'],
-            continuous_cols=['price']
-        )
 
         self.test_df = pd.DataFrame({
             'color': ['purple', 'red'],
             'size': ['tiny', 'small'],
             'price': [11.0, 13.0]
+        }).astype({
+            'color': 'category',
+            'size': 'category'
         })
+
+        self.schema = TabularSchema.infer_from_dataframe(
+            self.train_df,
+            categorical_cols=['color', 'size'],
+            continuous_cols=['price']
+        )
 
         self.rep = self.representation_class(**self.representation_kwargs)
 
