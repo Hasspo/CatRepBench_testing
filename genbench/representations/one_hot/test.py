@@ -30,13 +30,13 @@ class BaseRepresentationTest(unittest.TestCase):
             'color': ['red', 'blue', 'green', 'red'],
             'size': ['small', 'medium', 'large', 'small'],
             'price': [10.0, 15.0, 20.0, 12.0]
-        })  # pandas по умолчанию создаст object-dtype для строк
+        }).astype({'color': 'object', 'size': 'object'})
 
         self.test_df = pd.DataFrame({
             'color': ['purple', 'red'],
             'size': ['tiny', 'small'],
             'price': [11.0, 13.0]
-        })
+        }).astype({'color': 'object', 'size': 'object'})
 
         self.schema = TabularSchema.infer_from_dataframe(
             self.train_df,
