@@ -19,7 +19,7 @@ jobs:
       - name: Install dependencies
         run: pip install pandas
 
-      - name: Run all test.py files with error propagation
+      - name: Run all test*.py files
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
@@ -27,5 +27,5 @@ jobs:
           while IFS= read -r -d '' file; do
             echo "▶️ Running $file"
             python "$file" || exit_code=1
-          done < <(find . -name "test.py" -print0)
+          done < <(find . -name "test*.py" -print0)
           exit $exit_code
